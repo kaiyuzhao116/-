@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_package = "com.sanshengshui.netty.protobuf";
+option java_outer_classname = "UserMsg";
+
+message User {
+  // 用户ID
+  int32 id = 1;
+  // 用户名
+  string name = 2;
+  // 用户年龄
+  int32 age = 3;
+  //状态
+  string status = 4;
+}
+message User1 {
+  // 用户ID
+  int32 id = 1;
+  // 用户名
+  string name = 2;
+  // 用户年龄
+  int32 age = 3;
+  //状态
+  string status = 4;
+}
