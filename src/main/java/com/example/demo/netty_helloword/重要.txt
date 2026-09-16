@@ -1,0 +1,75 @@
+一、先理清 Netty HTTP 分包机制
+HttpServerCodec 会把一次完整 HTTP 请求拆成多段消息依次进 pipeline：
+HttpRequest：请求行 + 请求头（不含 body）
+若干个 HttpContent：分段的 body 二进制数据
+LastHttpContent：body 结束标记（最后一段 content）
+两种处理方案对比
+方案 1：加 HttpObjectAggregator → 直接拿到 FullHttpRequest（推荐）
+HttpObjectAggregator 会自动缓存所有分段 HttpContent，拼接成单一完整对象 FullHttpRequest，一次传给你的业务 Handler。
+java
+运行
+// pipeline配置
+p.addLast(new HttpServerCodec());
+p.addLast(new HttpObjectAggregator(10*1024*1024)); // 最大10M
+p.addLast(new MyHandler());
+业务 Handler 只需要判断类型：
+java
+运行
+@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    if (msg instanceof FullHttpRequest req) {
+        // 一行拿到完整body
+        ByteBuf bodyBuf = req.content();
+        String body = bodyBuf.toString(StandardCharsets.UTF_8);
+    }
+}
+优点：
+代码极简，不用自己维护缓存、分段拼接、结束判断
+自动处理内存上限，超过配置大小直接抛异常断开连接
+缺点：
+超大文件上传会一次性占满内存（可配合分块上传优化）
+方案 2：不使用 HttpObjectAggregator，分段处理（不用 FullHttpRequest）
+不聚合的情况下，你要手动缓存 body 数据，分三步处理三类消息：
+收到 HttpRequest：初始化一个 ByteBuf 用来缓存 body
+收到 HttpContent：把 content 写入缓存 ByteBuf
+收到 LastHttpContent：代表 body 接收完毕，读取完整缓存数据，释放资源
+示例伪代码：
+java
+运行
+@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    if (msg instanceof HttpRequest req) {
+        // 初始化缓存，存到Channel附件
+        ctx.channel().attr(KEY_BODY_BUFFER).set(ctx.alloc().buffer());
+    }
+    if (msg instanceof HttpContent content) {
+        ByteBuf buf = ctx.channel().attr(KEY_BODY_BUFFER).get();
+        buf.writeBytes(content.content());
+        // 释放分段content，防止内存泄漏
+        ReferenceCountUtil.release(content);
+        // 最后一段，代表body读完
+        if (msg instanceof LastHttpContent) {
+            String fullBody = buf.toString(StandardCharsets.UTF_8);
+            System.out.println("完整POST body：" + fullBody);
+            buf.release(); // 释放缓存
+            ctx.channel().attr(KEY_BODY_BUFFER).set(null);
+        }
+    }
+}
+缺点非常明显：
+手动管理缓存 ByteBuf，极易忘记释放，造成内存泄漏
+自己要做长度校验、内存上限控制，重复造轮子
+逻辑分散，可读性差，容易写 bug
+无法直接拿到请求头 + body 一体的对象，参数解析麻烦
+二、回答你的核心问题：是否一定要转 FullHttpRequest？
+业务只是普通接口、表单、JSON POST
+✅ 强烈用 HttpObjectAggregator，直接拿 FullHttpRequest，标准写法，不用分段处理。
+超大文件流式上传（几十 MB/GB，不能全加载进内存）
+❌ 不能用聚合器（会 OOM），必须不用 FullHttpRequest，分段流式读取 HttpContent，边读边写入磁盘，不缓存完整 body。
+三、补充关键知识点
+HttpObjectAggregator 的本质就是帮你实现了上面「手动分段缓存」的逻辑，封装好内存安全、上限校验，不用自己写。
+即使你用聚合器，底层依然是分段接收，只是框架帮你拼接成 FullHttpRequest，不是绕过分包机制。
+只有流式大文件上传场景才需要放弃 FullHttpRequest，绝大多数后端接口开发不需要。
+四、总结
+日常业务开发：一定要用聚合器，拿 FullHttpRequest，省心安全；
+超大文件流式上传场景：不能聚合，不使用 FullHttpRequest，分段处理 HttpContent；
