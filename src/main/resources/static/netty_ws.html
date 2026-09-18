@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Netty WebSocket 通讯学习</title>
+    <style>
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; max-width: 720px; margin: 30px auto; padding: 0 16px; }
+        h2 { color: #2c3e50; }
+        .status { display: inline-block; padding: 4px 12px; border-radius: 4px; color: #fff; background: #e74c3c; }
+        .status.online { background: #27ae60; }
+        #log { border: 1px solid #ddd; height: 340px; overflow-y: auto; padding: 10px; background: #fafafa; line-height: 1.6; }
+        #log .send { color: #2980b9; }
+        #log .recv { color: #16a085; }
+        #log .sys { color: #7f8c8d; font-style: italic; }
+        .row { margin-top: 12px; display: flex; gap: 8px; }
+        input[type=text] { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 16px; border: none; border-radius: 4px; background: #34495e; color: #fff; cursor: pointer; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        button.green { background: #27ae60; }
+        button.red { background: #e74c3c; }
+    </style>
+</head>
+<body>
+<h2>Netty WebSocket 通讯 Demo</h2>
+<p>连接状态：<span id="status" class="status">未连接</span></p>
+
+<div id="log"></div>
+
+<div class="row">
+    <button id="connectBtn" class="green" onclick="connect()">连接</button>
+    <button id="disconnectBtn" class="red" onclick="disconnect()" disabled>断开</button>
+</div>
+<div class="row">
+    <input type="text" id="msg" placeholder="输入消息，回车或点发送" onkeydown="if(event.key==='Enter')send()">
+    <button id="sendBtn" onclick="send()" disabled>发送</button>
+</div>
+
+<script>
+    let ws = null;
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function addLog(text, cls) {
+        const line = document.createElement('div');
+        line.className = cls;
+        line.textContent = text;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function connect() {
+        // 对应 Netty 服务端 WebSocketServerProtocolHandler("/ws")
+        ws = new WebSocket('ws://localhost:8090/ws');
+
+        ws.onopen = () => {
+            statusEl.textContent = '已连接';
+            statusEl.classList.add('online');
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            sendBtn.disabled = false;
+            addLog('[系统] WebSocket 连接已建立', 'sys');
+        };
+
+        ws.onmessage = (event) => {
+            addLog('[服务端] ' + event.data, 'recv');
+        };
+
+        ws.onclose = () => {
+            statusEl.textContent = '未连接';
+            statusEl.classList.remove('online');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            sendBtn.disabled = true;
+            addLog('[系统] WebSocket 连接已关闭', 'sys');
+        };
+
+        ws.onerror = () => {
+            addLog('[系统] WebSocket 发生错误', 'sys');
+        };
+    }
+
+    function send() {
+        const input = document.getElementById('msg');
+        const text = input.value.trim();
+        if (!text || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(text);
+        addLog('[我] ' + text, 'send');
+        input.value = '';
+    }
+
+    function disconnect() {
+        if (ws) ws.close();
+    }
+</script>
+</body>
+</html>
