@@ -5,6 +5,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
@@ -36,9 +37,19 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
         // 3. 聚合 HTTP 消息，最大 64KB；拿到完整 FullHttpRequest
         pipeline.addLast(new HttpObjectAggregator(64 * 1024));
 
-        // 4. WebSocket 协议处理器：path 必须是 /ws，会自动完成握手并处理控制帧
+        // 3.5 握手拦截层：此时已拿到完整 FullHttpRequest，尚未升级为 WebSocket
+        //     适合读取握手 header（token / 来源 / query 参数），校验或放行
+        pipeline.addLast(new HttpHeadersHandler());
+
+        // 4. WebSocket 协议处理器：会自动完成握手并处理控制帧
+        //    checkStartsWith=true：按"路径以 /ws 开头"匹配，从而允许 URL 带 ?token=xxx 等 query 参数
+        //    （默认 false 的精确匹配会把 "/ws?token=abc" 整体与 "/ws" 比较而不匹配，导致握手被丢弃）
+        WebSocketServerProtocolConfig wsConfig = WebSocketServerProtocolConfig.newBuilder()
+                .websocketPath("/ws")
+                .checkStartsWith(true)
+                .build();
         //    它会把 TextWebSocketFrame / BinaryWebSocketFrame 等继续向后传递
-        pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
+        pipeline.addLast(new WebSocketServerProtocolHandler(wsConfig));
 
         // 5. 自定义业务处理器：处理前端发来的文本消息
         //    每连接新建实例（SimpleChannelInboundHandler 非 @Sharable）

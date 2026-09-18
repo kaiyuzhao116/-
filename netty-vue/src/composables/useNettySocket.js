@@ -10,7 +10,7 @@ import { ref, computed, onUnmounted } from 'vue';
  *
  * 暴露的响应式状态可直接在模板里绑定，做到"连接状态实时上屏"。
  */
-export function useNettySocket(url = 'ws://localhost:8090/ws') {
+export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
   // 连接状态：connecting | open | closed
   const status = ref('closed');
   // 消息日志列表，元素：{ from: 'me' | 'server' | 'sys', text, time }

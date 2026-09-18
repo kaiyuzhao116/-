@@ -32,7 +32,12 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<TextWebS
             return;
         }
 
-        String response = "服务端已收到: '" + request + "'  时间: " + LocalTime.now();
+        // 读取握手阶段 HttpHeadersHandler 挂到 Channel 上的 IP 和 token
+        String clientIp = ctx.channel().attr(HttpHeadersHandler.ATTR_IP).get();
+        String token = ctx.channel().attr(HttpHeadersHandler.ATTR_TOKEN).get();
+        System.out.println("当前连接 -> IP: " + clientIp + "  token: " + token);
+
+        String response = "服务端已收到: '" + request + "'  时间: " + LocalTime.now() + "凯宇";
         // 回写文本帧，前端 onmessage 会收到
         ctx.writeAndFlush(new TextWebSocketFrame(response));
     }
