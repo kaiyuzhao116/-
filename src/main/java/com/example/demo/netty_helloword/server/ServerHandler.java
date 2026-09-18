@@ -1,9 +1,6 @@
 package com.example.demo.netty_helloword.server;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +25,23 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String request) throws Exception {
 
+        Channel channel = ctx.channel();
+        System.out.println(channel.isActive() + " " + channel.isOpen());
+        if (request.equals("shutdown")) {
+            ctx.channel().close();
+
+            log.info("通道关闭");
+
+        }
+
+        if (request.equals("shut")) {
+            Server.bossGroup.shutdownGracefully();
+            Server.workerGroup.shutdownGracefully();
+            log.info("服务端关闭");
+
+        }
+        log.info("服务端接收到的数据： " + request);
+        System.out.println("服务端连接： " +  ctx);
         //创建一个回应
         String response;
         boolean close = false;

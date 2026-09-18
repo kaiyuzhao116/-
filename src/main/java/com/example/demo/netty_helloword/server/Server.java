@@ -9,11 +9,18 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 public final class Server {
+
+    public static EventLoopGroup bossGroup;
+    public static EventLoopGroup workerGroup;
     public static void main(String[] args) throws Exception{
 
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+        // 创建两个 EventLoopGroup 对象
+        // bossGroup 负责处理客户端的连接请求，workerGroup 负责具体的业务操作
+         bossGroup = new NioEventLoopGroup(1);
+
+         workerGroup = new NioEventLoopGroup();
 
         try{
             ServerBootstrap b = new ServerBootstrap();

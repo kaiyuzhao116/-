@@ -20,7 +20,7 @@ class DemoApplicationTests {
         UserMsg.User.Builder userInfo = UserMsg.User.newBuilder();
         userInfo.setId(1);
         userInfo.setName("mushuwei");
-        userInfo.setName("24");
+        userInfo.setAge(24);
         UserMsg.User user = userInfo.build();
         // 将数据写到输出流
         ByteArrayOutputStream output = new ByteArrayOutputStream();

@@ -10,9 +10,9 @@ import io.netty.handler.codec.string.StringEncoder;
 
 public class ServerInitializer extends ChannelInitializer<SocketChannel> {
 
+    // StringDecoder / StringEncoder 是 @Sharable 的，可以安全复用
     private static final StringDecoder DECODER = new StringDecoder();
     private static final StringEncoder ENCODER = new StringEncoder();
-    private static final ServerHandler SERVER_HANDLER = new ServerHandler();
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
@@ -35,6 +35,8 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
          * 而且服务端可能有多个客户端进行连接，并且每一个客户端请求的数据格式都不一致，这时便可以进行相应的处理。 客户端根据情况可以继承SimpleChannelInboundHandler类。
          * 好处是直接指定好传输的数据格式，就不需要再进行格式的转换了
          */
-        pipeline.addLast(SERVER_HANDLER);
+        // 每个客户端连接都要创建新的 Handler 实例：
+        // SimpleChannelInboundHandler 不是 @Sharable，复用同一个实例会导致第二个连接被拒绝
+        pipeline.addLast(new ServerHandler());
     }
 }

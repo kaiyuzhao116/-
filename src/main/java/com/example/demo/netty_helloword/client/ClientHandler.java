@@ -8,6 +8,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         System.err.println(msg);
+
     }
     //异常数据捕获
     @Override

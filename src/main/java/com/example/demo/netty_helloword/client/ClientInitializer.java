@@ -10,9 +10,9 @@ import io.netty.handler.codec.string.StringEncoder;
 
 public class ClientInitializer extends ChannelInitializer<SocketChannel> {
 
+    // StringDecoder / StringEncoder 是 @Sharable 的，可以安全复用
     private static final StringDecoder DECODER = new StringDecoder();
     private static final StringEncoder ENCODER = new StringEncoder();
-    private static final ClientHandler CLIENT_HANDLER = new ClientHandler();
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
@@ -20,6 +20,8 @@ public class ClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(DECODER);
         pipeline.addLast(ENCODER);
 
-        pipeline.addLast(CLIENT_HANDLER);
+        // 每个连接都要创建新的 Handler 实例：
+        // SimpleChannelInboundHandler 不是 @Sharable，复用同一个实例会导致第二个连接被拒绝
+        pipeline.addLast(new ClientHandler());
     }
 }
