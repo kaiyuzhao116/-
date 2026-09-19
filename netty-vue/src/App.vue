@@ -1,13 +1,53 @@
 <script setup>
 // Vue3 <script setup> 语法：无需 export default，顶层变量自动暴露给模板
-import { ref, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { useNettySocket } from './composables/useNettySocket.js';
 
 // 从组合式函数拿到响应式状态和方法
-const { status, messages, online, connect, send, disconnect } = useNettySocket();
+const { status, messages, online, connect, send, disconnect, notice } = useNettySocket();
+
+// 后端地址：登录走 Spring Boot(8080) REST，长连接走 Netty(8090) WebSocket
+const REST_BASE = 'http://localhost:8080';
+const WS_BASE = 'ws://localhost:8090/ws';
 
 const input = ref('');
 const logRef = ref(null);
+
+// 登录状态
+const username = ref('');
+const token = ref('');
+const logging = ref(false);
+const loggedIn = computed(() => !!token.value);
+
+// 登录拿 token -> 用该 token 建立 WebSocket 连接
+async function loginAndConnect() {
+  const name = username.value.trim();
+  if (!name) {
+    notice('请先输入用户名');
+    return;
+  }
+  logging.value = true;
+  try {
+    const resp = await fetch(`${REST_BASE}/netty_user/login?username=${encodeURIComponent(name)}`, {
+      method: 'POST',
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    token.value = data.token;
+    notice('登录成功，已获取 token，开始连接...');
+    connect(`${WS_BASE}?token=${encodeURIComponent(data.token)}`);
+  } catch (e) {
+    notice(`登录异常：${e.message}（请确认 8080 后端已启动）`);
+  } finally {
+    logging.value = false;
+  }
+}
+
+// 退出：断开连接并清空登录态
+function logout() {
+  disconnect();
+  token.value = '';
+}
 
 function onSend() {
   send(input.value);
@@ -35,10 +75,24 @@ const statusText = {
     <h2>Netty WebSocket × Vue3</h2>
 
     <div class="toolbar">
+      <input
+        v-model="username"
+        type="text"
+        class="name-input"
+        placeholder="输入用户名"
+        :disabled="online || logging"
+        @keydown.enter="loginAndConnect"
+      />
+      <button class="green" :disabled="online || logging" @click="loginAndConnect">
+        {{ logging ? '登录中…' : '登录并连接' }}
+      </button>
       <span>状态：</span>
       <span class="badge" :class="status">{{ statusText[status] }}</span>
-      <button class="green" :disabled="online || status === 'connecting'" @click="connect">连接</button>
-      <button class="red" :disabled="!online" @click="disconnect">断开</button>
+      <button class="red" :disabled="!online" @click="logout">断开</button>
+    </div>
+
+    <div v-if="loggedIn" class="who">
+      当前用户：<b>{{ username }}</b>（已绑定 token，聊天时别人会看到你的名字）
     </div>
 
     <div ref="logRef" class="log">
@@ -49,7 +103,7 @@ const statusText = {
         </span>
         <span class="text">{{ m.text }}</span>
       </div>
-      <div v-if="messages.length === 0" class="empty">还没有消息，点击「连接」开始通讯</div>
+      <div v-if="messages.length === 0" class="empty">还没有消息，输入用户名点「登录并连接」开始聊天</div>
     </div>
 
     <div class="input-row">
@@ -82,6 +136,17 @@ h2 {
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+}
+.name-input {
+  width: 160px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.who {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #16a085;
 }
 .badge {
   display: inline-block;

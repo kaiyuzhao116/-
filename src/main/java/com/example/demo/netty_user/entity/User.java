@@ -5,8 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 简单用户实体（纯模拟，无密码）。
- * demo 用内存存储，仅保留最基本的标识字段。
+ * 用户实体，对应数据库表 t_user。
+ * 纯模拟登录：无密码，token 在登录时生成并刷新。
  */
 @Data
 @NoArgsConstructor
@@ -16,4 +16,6 @@ public class User {
     private Long id;
 
     private String username;
+
+    private String token;
 }

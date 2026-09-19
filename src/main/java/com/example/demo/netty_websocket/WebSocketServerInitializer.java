@@ -1,5 +1,6 @@
 package com.example.demo.netty_websocket;
 
+import com.example.demo.netty_user.service.UserService;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -8,6 +9,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import org.springframework.stereotype.Component;
 
 /**
  * WebSocket 服务端的 pipeline 配置。
@@ -22,7 +24,15 @@ import io.netty.handler.stream.ChunkedWriteHandler;
  *   WebSocketServerProtocolHandler —— 自动处理握手、Close/Ping/Pong 控制帧
  *   业务 Handler          —— 处理真正的文本/二进制消息帧
  */
+@Component
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
+
+    /** 注入 Spring 管理的用户服务，供握手时校验 token / 解析用户名 */
+    private final UserService userService;
+
+    public WebSocketServerInitializer(UserService userService) {
+        this.userService = userService;
+    }
 
     @Override
     protected void initChannel(SocketChannel ch) {
@@ -52,7 +62,7 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
         pipeline.addLast(new WebSocketServerProtocolHandler(wsConfig));
 
         // 5. 自定义业务处理器：处理前端发来的文本消息
-        //    每连接新建实例（SimpleChannelInboundHandler 非 @Sharable）
-        pipeline.addLast(new WebSocketServerHandler());
+        //    每连接新建实例（SimpleChannelInboundHandler 非 @Sharable），把 userService 传进去
+        pipeline.addLast(new WebSocketServerHandler(userService));
     }
 }

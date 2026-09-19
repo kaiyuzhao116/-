@@ -1,12 +1,12 @@
 package com.example.demo.netty_websocket;
 
+import com.example.demo.netty_websocket.util.NettyUtil;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.util.AttributeKey;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -30,10 +30,6 @@ import java.util.List;
 @ChannelHandler.Sharable
 public class HttpHeadersHandler extends ChannelInboundHandlerAdapter {
 
-    // 属性键：相当于给"这条连接"定义了两个可挂载的槽位
-    public static final AttributeKey<String> ATTR_IP = AttributeKey.valueOf("clientIp");
-    public static final AttributeKey<String> ATTR_TOKEN = AttributeKey.valueOf("token");
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 只有握手阶段才是 FullHttpRequest
@@ -52,8 +48,8 @@ public class HttpHeadersHandler extends ChannelInboundHandlerAdapter {
             String token = (tokens != null && !tokens.isEmpty()) ? tokens.get(0) : null;
 
             // 3) 把 IP / token 存到 Channel 属性上 —— 后续 Handler 就能取用
-            ctx.channel().attr(ATTR_IP).set(ip);
-            ctx.channel().attr(ATTR_TOKEN).set(token);
+            NettyUtil.setAttr(ctx.channel(), NettyUtil.IP, ip);
+            NettyUtil.setAttr(ctx.channel(), NettyUtil.TOKEN, token);
 
             System.out.println("===== 握手解析并挂载到管道 =====");
             System.out.println("Origin: " + request.headers().get(HttpHeaderNames.ORIGIN));

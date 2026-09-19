@@ -10,7 +10,7 @@ import { ref, computed, onUnmounted } from 'vue';
  *
  * 暴露的响应式状态可直接在模板里绑定，做到"连接状态实时上屏"。
  */
-export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
+export function useNettySocket() {
   // 连接状态：connecting | open | closed
   const status = ref('closed');
   // 消息日志列表，元素：{ from: 'me' | 'server' | 'sys', text, time }
@@ -19,6 +19,8 @@ export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
   const online = computed(() => status.value === 'open');
 
   let ws = null;
+  // 当前连接地址（登录拿到 token 后拼出来），断线重连复用
+  let currentUrl = '';
   // 心跳与自动重连相关
   let heartbeatTimer = null;
   let reconnectTimer = null;
@@ -32,10 +34,15 @@ export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
     messages.value.push({ from, text, time: now() });
   }
 
-  function connect() {
+  function connect(url) {
+    if (!url) {
+      push('sys', '缺少连接地址（请先登录后再连接）');
+      return;
+    }
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
+    currentUrl = url;
     manualClosed = false;
     status.value = 'connecting';
     push('sys', `正在连接 ${url} ...`);
@@ -100,11 +107,11 @@ export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
     }
   }
 
-  // 断线自动重连（3s 后重试）
+  // 断线自动重连（3s 后重试，沿用上次登录拿到的地址）
   function scheduleReconnect() {
     clearTimeout(reconnectTimer);
     push('sys', '3 秒后尝试重新连接...');
-    reconnectTimer = setTimeout(connect, 3000);
+    reconnectTimer = setTimeout(() => connect(currentUrl), 3000);
   }
 
   // 组件卸载时清理，避免内存泄漏
@@ -115,5 +122,5 @@ export function useNettySocket(url = 'ws://localhost:8090/ws?token=abc123') {
     if (ws) ws.close();
   });
 
-  return { status, messages, online, connect, send, disconnect };
+  return { status, messages, online, connect, send, disconnect, notice: (text) => push('sys', text) };
 }

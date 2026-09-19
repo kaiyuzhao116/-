@@ -2,6 +2,7 @@ package com.example.demo.netty_user.controller;
 
 import com.example.demo.netty_user.entity.User;
 import com.example.demo.netty_user.service.UserService;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import java.util.Map;
  *   GET  http://localhost:8080/netty_user/info?token=....        -> {"id":1,"username":"凯宇"}
  *   GET  http://localhost:8080/netty_user/count                  -> 用户数
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/netty_user")
 public class UserController {
