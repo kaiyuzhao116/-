@@ -31,3 +31,6 @@ demo:
 
 test:
   name-test: ${MY_NAME:张三}
+
+test2:
+  name-test: ${MY_NAME:张三22}
