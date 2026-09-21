@@ -30,4 +30,4 @@ demo:
     owner: kaiyu
 
 test:
-  name-test: kaiyu
+  name-test: ${MY_NAME:张三}
