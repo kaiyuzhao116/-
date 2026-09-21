@@ -9,6 +9,9 @@ spring:
     url: jdbc:mysql://localhost:3306/netty_user?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 123456
+  neo4j:
+    pool:
+      idle-time-before-connection-test:
 
 # ===== MyBatis 配置 =====
 mybatis:
@@ -19,3 +22,12 @@ mybatis:
   configuration:
     # 下划线列名 -> 驼峰属性名（如 create_time -> createTime）
     map-underscore-to-camel-case: true
+demo:
+  upload-dir: my_upload          # 对应 Java 字段 uploadDir
+  max-file-size-mb: 10
+  app:
+    name: demo-app               # 练嵌套：再来一个内部类
+    owner: kaiyu
+
+test:
+  name-test: kaiyu
