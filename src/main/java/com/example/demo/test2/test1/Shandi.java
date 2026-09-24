@@ -1,4 +1,4 @@
-package com.example.demo.test2;
+package com.example.demo.test2.test1;
 
 public class Shandi implements memroy {
     @Override
