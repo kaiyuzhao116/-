@@ -6,8 +6,12 @@ public class Danlie {
 
     }
 
+    private static Danlie instance;
+    static {
+        instance = new Danlie();
+    }
 
-    private static Danlie instance =  new Danlie();
+
 
     public static Danlie getInstance() {
         return instance;
