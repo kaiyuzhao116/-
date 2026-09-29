@@ -4,35 +4,19 @@ import java.util.HashMap;
 
 public class Test implements Cloneable{
 
-    private String name;
-    private int age;
+    private Student student;
 
-    public void setAge(int age) {
-        this.age = age;
+    public Student getStudent() {
+        return student;
     }
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getAge() {
-        return age;
-    }
-    public String getName() {
-        return name;
+    public void setStudent(Student student) {
+        this.student = student;
     }
 
-    private HashMap<String, String> map ;
-
-    public HashMap<String, String> getMap() {
-        return map;
-    }
-    public void setMap(HashMap<String, String> map) {
-        this.map = map;
-    }
     @Override
     protected Test clone() throws CloneNotSupportedException {
 
-        System.out.println("浅克隆成功！！");
+        System.out.println("克隆成功！！");
         return (Test) super.clone();
     }
 }
