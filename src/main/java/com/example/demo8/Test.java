@@ -14,7 +14,7 @@ public class Test {
 //        String s = computer.readSD(sDcardOImpL);
 //        System.out.println(s);
 
-        SDAdapterTf sdAdapterTf = new SDAdapterTf();
+        SDAdapterTf sdAdapterTf = new SDAdapterTf(new TFCardIpml());
         Computer computer = new Computer();
         computer.readSD(sdAdapterTf);
         log.info("{}", sdAdapterTf.readSD());
