@@ -14,10 +14,14 @@ public class Test {
 //        String s = computer.readSD(sDcardOImpL);
 //        System.out.println(s);
 
-        SDAdapterTf sdAdapterTf = new SDAdapterTf(new TFCardIpml());
-        Computer computer = new Computer();
-        computer.readSD(sdAdapterTf);
-        log.info("{}", sdAdapterTf.readSD());
+//        SDAdapterTf sdAdapterTf = new SDAdapterTf(new TFCardIpml());
+//        Computer computer = new Computer();
+//        computer.readSD(sdAdapterTf);
+//        log.info("{}", sdAdapterTf.readSD());
 
+
+        sada sada = new sada();
+        sada.test();
+        sada.test2();
     }
 }
